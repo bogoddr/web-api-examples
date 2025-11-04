@@ -1,8 +1,9 @@
 interface UserProfileProps {
-  profile: UserProfile;
+  profile?: UserProfile;
 }
 
 export function UserProfile({ profile }: UserProfileProps) {
+  if (!profile) return <p>no profile</p>
   return (
     <section id="profile">
       <h2>Logged in as {profile.display_name}</h2>
