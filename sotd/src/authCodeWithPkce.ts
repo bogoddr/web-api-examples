@@ -28,7 +28,7 @@ export async function getAccessToken(clientId: string, code: string) {
     const result = await fetch("https://accounts.spotify.com/api/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: params
+        body: params.toString()
     });
 
     const { access_token } = await result.json();
