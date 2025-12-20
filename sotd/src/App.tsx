@@ -25,20 +25,23 @@ async function fetchPlaylists(accessToken: string): Promise<Playlist[]> {
   return data.items;
 }
 
-async function fetchPlaylistTracks(accessToken: string, playlistId: string): Promise<PlaylistTrack[]> {
-  const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+async function fetchPlaylistTracks(accessToken: string, playlistId: string, offset: number = 0): Promise<{ items: PlaylistTrack[], total: number }> {
+  const TRACKS_PER_PAGE = 100
+  const result = await fetch(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?limit=${TRACKS_PER_PAGE}&offset=${offset}`, {
     method: 'GET',
     headers: { Authorization: `Bearer ${accessToken}` },
   });
 
   const data: PlaylistTracksResponse = await result.json();
-  return data.items;
+  return { items: data.items, total: data.total };
 }
 
 function App() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [selectedPlaylistTracks, setSelectedPlaylistTracks] = useState<PlaylistTrack[] | null>(null);
+  const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
+  const [totalTracks, setTotalTracks] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accessToken, setAccessToken] = useState<string>('');
@@ -79,15 +82,31 @@ function App() {
 
   const handleSelectPlaylist = async (playlistId: string) => {
     try {
-      const tracks = await fetchPlaylistTracks(accessToken, playlistId);
-      setSelectedPlaylistTracks(tracks);
+      const { items, total } = await fetchPlaylistTracks(accessToken, playlistId, 0);
+      setSelectedPlaylistTracks(items);
+      setSelectedPlaylistId(playlistId);
+      setTotalTracks(total);
     } catch (err) {
       console.error('Failed to fetch playlist tracks:', err);
     }
   };
 
+  const handleLoadMoreTracks = async () => {
+    if (!selectedPlaylistId || !selectedPlaylistTracks) return;
+
+    try {
+      const currentOffset = selectedPlaylistTracks.length;
+      const { items } = await fetchPlaylistTracks(accessToken, selectedPlaylistId, currentOffset);
+      setSelectedPlaylistTracks([...selectedPlaylistTracks, ...items]);
+    } catch (err) {
+      console.error('Failed to fetch more tracks:', err);
+    }
+  };
+
   const handleBackToPlaylists = () => {
     setSelectedPlaylistTracks(null);
+    setSelectedPlaylistId(null);
+    setTotalTracks(0);
   };
 
   if (loading) {
@@ -106,7 +125,12 @@ function App() {
       <hr style={{ margin: '2rem 0' }} />
 
       {selectedPlaylistTracks ? (
-        <PlaylistTracks tracks={selectedPlaylistTracks} onBack={handleBackToPlaylists} />
+        <PlaylistTracks
+          tracks={selectedPlaylistTracks}
+          totalTracks={totalTracks}
+          onBack={handleBackToPlaylists}
+          onLoadMore={handleLoadMoreTracks}
+        />
       ) : (
         <PlaylistList playlists={playlists} onSelectPlaylist={handleSelectPlaylist} />
       )}

@@ -22,3 +22,10 @@ npm run dev
 ```
 
 Replace the value for clientId in `/src/script.ts` with your own Client ID.
+
+
+## MY NOTES
+
+use https://chromewebstore.google.com/detail/gofullpage-full-page-scre/fdpohaocaechififmbbbbbknoalclacl?hl=en
+
+https://www.staples.com/services/
